@@ -363,7 +363,7 @@ user-select: none
 <div class="app-header">
   <div>
     <h1>🔧 汽车驱动桥设计计算工具</h1>
-    <div class="sub">基于《汽车设计》第6版（闵海涛、王建华）· 主减速器 · 差速器 · 半轴设计</div>
+    <div class="sub">基于《汽车设计》第5版（闵海涛、王建华）· 主减速器 · 差速器 · 半轴设计</div>
     <div class="hdr-stu-info">
       <span class="hdr-stu-chip">🎓 学号：<span id="dispStuId">—</span></span>
       <span class="hdr-stu-chip">👤 姓名：<span id="dispStuName">—</span></span>
@@ -817,7 +817,7 @@ user-select: none
   <div class="card">
     <div class="card-title"><span class="icon">🔢</span>差速器齿轮强度校核</div>
     <div class="formula-box">
-      <span style="color:#1a4a8a;font-weight:700">弯曲应力（式5-35 变体）：</span><br>
+      <span style="color:#1a4a8a;font-weight:700">弯曲应力（式5-38）：</span><br>
       σ<sub>w</sub> = 2T<sub>c</sub>·k<sub>s</sub>·k<sub>m</sub> / (k<sub>V</sub>·m·b₂·d₂·J·n) × 10³<br>
       <span style="color:#888;font-size:11px">n=行星齿轮数；J=综合系数（查表）；b₂、d₂=半轴齿轮齿宽、分度圆直径(mm)；m=端面模数；T<sub>c</sub>=0.6×min(T<sub>ce</sub>,T<sub>cs</sub>)；×10³将N·m换算为N·mm<br>
       当T<sub>c</sub>=min(T<sub>ce</sub>,T<sub>cs</sub>)时，[σ<sub>w</sub>]≤980 MPa；当T<sub>c</sub>=T<sub>cl</sub>（日常）时，[σ<sub>w</sub>]≤210 MPa</span>
@@ -882,7 +882,7 @@ user-select: none
       式5-39: Mφ = ½ × m₂ʹ × G₂ × rr × φ　（单侧，N·mm）<br>
       式5-49: d ≥ K × ∛Mφ　（K=0.205~0.218；Mφ单位N·mm，d单位mm）<br>
       式5-40: τ = 16Mφ / (π × d³) ≤ [τ]　（扭转切应力，MPa）<br>
-      式5-41: θ = 16Mφ×L_ff×180 / (G×π²×d⁴)　（扭转角，°；G=80000 MPa）<br>
+      式5-41: θ = 32Mφ×L_ff×180 / (G×π²×d⁴)　（扭转角，°；G=80000 MPa）<br>
       　　　　扭转切应力宜500~700MPa；转角宜每米6°~15°
     </div>
     <div id="fullFloatResults" style="margin-top:10px"></div>
@@ -962,9 +962,33 @@ user-select: none
           <option value="malleable">可锻铸铁</option>
         </select>
       </div>
+      <div class="field"><label>危险截面形状</label>
+        <select id="sectionShape" onchange="onSectionShapeChange()">
+          <option value="circular" selected>圆环截面（轴管）</option>
+          <option value="rect">矩形空心截面（冲压焊接）</option>
+        </select>
+        <div class="unit">圆环截面 Wz=Wy；矩形截面 Wz≠Wy 需分别校核</div>
+      </div>
+      <div class="field"><label>板簧座中心到轮毂中心距 b (mm)</label><input type="number" id="c_spring" value="400" step="10"><div class="unit">弯矩力臂；教材中用 b 表示</div></div>
+    </div>
+    <!-- ── 圆环截面参数 ── -->
+    <div id="dims-circular" class="grid3" style="margin-top:4px">
       <div class="field"><label>轴管外径 D₁ (mm)</label><input type="number" id="D1_housing" value="80" step="1"><div class="unit">危险截面（弹簧座/悬架安装点）处外径</div></div>
       <div class="field"><label>轴管内径 d₁ (mm)</label><input type="number" id="d1_housing" value="60" step="1"><div class="unit">空心轴管内径，d₁ < D₁</div></div>
-      <div class="field"><label>车轮中心至弹簧座距 c (mm)</label><input type="number" id="c_spring" value="400" step="10"><div class="unit">弯矩力臂；= 轮距/2 − 弹簧座间距/2</div></div>
+    </div>
+    <!-- ── 矩形空心截面参数 ── -->
+    <div id="dims-rect" class="grid4" style="margin-top:4px;display:none">
+      <div class="field"><label>外宽 B_r (mm)</label><input type="number" id="Br_housing" value="90" step="1"><div class="unit">水平方向外宽</div></div>
+      <div class="field"><label>外高 H_r (mm)</label><input type="number" id="Hr_housing" value="110" step="1"><div class="unit">垂直方向外高</div></div>
+      <div class="field"><label>壁厚上下 t_h (mm)</label><input type="number" id="th_housing" value="8" step="0.5"><div class="unit">上下壁厚（垂直方向）</div></div>
+      <div class="field"><label>壁厚左右 t_b (mm)</label><input type="number" id="tb_housing" value="8" step="0.5"><div class="unit">左右壁厚（水平方向）</div></div>
+    </div>
+    <div class="info-box" id="rectDimsInfo" style="background:#e0f0ff;border-left:4px solid #2d6ec0;padding:8px 14px;margin:8px 0 12px;font-size:12px;color:#0a3060;display:none">
+      <strong>矩形截面说明：</strong>H_r 为垂直方向（高度），B_r 为水平方向（宽度）。
+      内腔尺寸自动计算：b = B_r − 2×t_b，h = H_r − 2×t_h。
+      工况二侧滑时，侧向力产生的弯矩作用在<strong>水平面内</strong>，须用 Wy 校核（圆截面 Wy=Wz 无需区分）。
+    </div>
+    <div class="grid3" style="margin-top:4px">
       <div class="field"><label>许用弯曲应力 [σ]_w (MPa)</label><input type="number" id="sigmaAllow_w" value="500" step="10"><div class="unit">按材料选取（见上方参考值）</div></div>
       <div class="field"><label>许用扭转切应力 [τ]_w (MPa)</label><input type="number" id="tauAllow_w" value="400" step="10"><div class="unit">按材料选取（见上方参考值）</div></div>
     </div>
@@ -985,22 +1009,60 @@ user-select: none
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">📐</span>桥壳截面参数（式5-57/58）</div>
-    <div class="formula-box">
-      式5-57: 弯曲截面系数 Wz = π(D₁⁴ − d₁⁴)/(32D₁)　（mm³）<br>
-      式5-58: 扭转截面系数 Wp = π(D₁⁴ − d₁⁴)/(16D₁)　（mm³）
+    <div class="card-title"><span class="icon">📐</span>桥壳截面参数（式5-57/58 扩展）</div>
+    <div class="formula-box" id="formulaCircular">
+      <strong>◆ 圆环截面（式5-57/58）</strong><br>
+      惯性矩:　Iz = Iy = π(D₁⁴ − d₁⁴)/64　（轴对称，两方向相同）<br>
+      式5-57: 弯曲截面系数 Wz = Wy = π(D₁⁴ − d₁⁴)/(32D₁)　（mm³）<br>
+      式5-58: 扭转截面系数 Wp = π(D₁⁴ − d₁⁴)/(16D₁)　（mm³）= 2Wz<br>
+      　　　　（Wz=Wy，垂直/水平弯曲截面系数相同，无需区分方向）
+    </div>
+    <div class="formula-box" id="formulaRect" style="display:none">
+      <strong>◆ 矩形空心截面（材料力学 + Bredt薄壁闭合截面公式）</strong><br>
+      外宽 B_r × 外高 H_r，内宽 b = B_r−2t_b，内高 h = H_r−2t_h<br>
+      <br>
+      <strong>垂直弯曲</strong>（抵抗垂直载荷弯矩，绕水平z轴）：<br>
+      　Iz = (B_r × H_r³ − b × h³)/12　（mm⁴）<br>
+      　Wz = Iz/(H_r/2) = (B_r × H_r³ − b × h³)/(6 × H_r)　（mm³）<br>
+      <br>
+      <strong>水平弯曲</strong>（抵抗侧向载荷弯矩，绕垂直y轴）：<br>
+      　Iy = (H_r × B_r³ − h × b³)/12　（mm⁴）<br>
+      　Wy = Iy/(B_r/2) = (H_r × B_r³ − h × b³)/(6 × B_r)　（mm³）<br>
+      <br>
+      <strong>扭转</strong>（Bredt薄壁闭合截面公式）：<br>
+      　Am = ((B_r+b)/2) × ((H_r+h)/2)　（中线围合面积，mm²）<br>
+      　t_min = min(t_h, t_b)　（最小壁厚）<br>
+      　τ_max = T/(2 × Am × t_min)　→　Wp = 2 × Am × t_min　（mm³）<br>
+      <br>
+      <strong>注：当 Wz≠Wy 时，工况二侧滑须用 Wy 校核水平面弯曲应力！</strong>
     </div>
     <div id="housingSectionResults" style="margin-top:10px"></div>
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🔢</span>三工况桥壳强度校核（式5-56）</div>
+    <div class="card-title"><span class="icon">🔢</span>三工况桥壳强度校核（式5-56/57/58）</div>
     <div class="formula-box">
-      <strong>工况一</strong>（纵向力最大，制动/驱动）：Fz2=m₂ʹG₂/2，Mw=Fz2×c；T_w=Fz2×φ×rr<br>
-      　σw=Mw/Wz，τw=T_w/Wp，σn=√(σw²+4τw²)<br>
-      <strong>工况二</strong>（侧向力最大，侧滑；φ₁=1.0）：Fz2o=G₂(0.5+hg×φ₁/B₂)，Fz2i=G₂-Fz2o<br>
-      　σwo=Fz2o×c/Wz（外轮）；σwi=Fz2i×c/Wz（内轮）<br>
-      <strong>工况三</strong>（垂直力最大，冲击）：Fz2=kG₂/2，σw3=Fz2×c/Wz（纯弯曲）
+      <strong>工况一（式5-56）</strong>牵引力或制动力最大时：<br>
+      　Fz2 = m₂ʹG₂/2（垂直反力），Fx2 = Fz2·φ（牵引/制动力）<br>
+      　Mv = Fz2·b（垂直弯矩），Mh = Fx2·b（水平弯矩）<br>
+      　Tт = Fx2·rr（扭矩）<br>
+      　<strong>σ = Mv/Wv + Mh/Wh</strong>（垂直+水平弯曲应力叠加）<br>
+      　<strong>τ = Tт/Wт</strong>（扭转切应力）<br>
+      　σn = √(σ²+4τ²)（第四强度理论合成应力）<br>
+      <br>
+      <strong>工况二（式5-57）</strong>侧向力最大时（侧滑，φ₁=1.0）：<br>
+      　Fz₂ₒ = G₂(0.5+hg·φ₁/B₂)（外侧车轮垂直反力）<br>
+      　Fz₂ᵢ = G₂−Fz₂ₒ（内侧车轮垂直反力）<br>
+      　<strong>σ₁ = Fz₂ₒ·(b + φ₁·rr) / Wv</strong>（外侧板簧座，应力较大）<br>
+      　<strong>σ₂ = Fz₂ᵢ·(b − φ₁·rr) / Wv</strong>（内侧板簧座，应力较小）<br>
+      　（侧向摩擦力效果已通过 b±φ₁·rr 等效力臂纳入，无需另算水平弯曲）<br>
+      <br>
+      <strong>工况三（式5-58）</strong>汽车通过不平路面时：<br>
+      　<strong>σ = k·G₂·b / (2·Wv)</strong>（纯垂直弯曲）<br>
+      <br>
+      式中 b = 板簧座中心到轮毂中心距离（mm）；Wv=垂直抗弯截面系数；<br>
+      Wh=水平抗弯截面系数；Wт=抗扭截面系数。<br>
+      许用值：[σ]=300~500 MPa，[τ]=150~400 MPa（铸铁取小值，钢板冲压焊接式取大值）
     </div>
     <div id="housingStrengthResults" style="margin-top:10px"></div>
   </div>
@@ -2527,7 +2589,7 @@ function calcFullFloat() {
   const d_m3 = Math.pow(d_design, 3); // mm³
   const tau = 16 * Mphi / (Math.PI * d_m3); // MPa (N/mm²)
 
-  // 式5-41: θ = M*l*180/(G*π²*d⁴/32)  → θ = 16*M*l*180/(G*π²*d⁴) ... 
+  // 式5-41: θ = M*l*180/(G*π²*d⁴/32)  → θ = 32*M*l*180/(G*π²*d⁴)
   // Actually: θ(rad) = M*l/(G*Ip), Ip=πd⁴/32
   // θ(°) = M*l/(G*πd⁴/32) * (180/π)
   // Mφ in N·mm, l in mm, G=80000 N/mm², d in mm
@@ -2757,75 +2819,199 @@ function calcHalfShaftAll() {
 }
 
 // ═══════════════════════════════════════════════════════
-// TAB 5：桥壳强度（式5-56~58）
+// TAB 5：桥壳强度（式5-56~58 扩展：支持圆环 + 矩形截面）
 // ═══════════════════════════════════════════════════════
+
+function onSectionShapeChange() {
+  const shape = document.getElementById('sectionShape').value;
+  document.getElementById('dims-circular').style.display = shape==='circular' ? 'grid' : 'none';
+  document.getElementById('dims-rect').style.display     = shape==='rect'     ? 'grid' : 'none';
+  document.getElementById('rectDimsInfo').style.display   = shape==='rect'     ? 'block': 'none';
+  document.getElementById('formulaCircular').style.display= shape==='circular' ? 'block': 'none';
+  document.getElementById('formulaRect').style.display    = shape==='rect'     ? 'block': 'none';
+  // 清空旧结果
+  document.getElementById('housingSectionResults').innerHTML = '';
+  document.getElementById('housingStrengthResults').innerHTML = '';
+}
+
+// 计算截面参数：返回 { Wz, Wy, Wp, Iz, Iy, cards[], shapeName }
+function calcSectionProps() {
+  const shape = document.getElementById('sectionShape').value;
+  if(shape === 'rect') {
+    const Br_ = v('Br_housing'), Hr_ = v('Hr_housing');
+    const th_  = v('th_housing'), tb_ = v('tb_housing');
+    const b_ = Br_ - 2*tb_, h_ = Hr_ - 2*th_;
+    if(b_ <= 0 || h_ <= 0) { alert('内腔尺寸≤0，请检查壁厚！'); return null; }
+
+    // 惯性矩
+    const Iz = (Br_*Math.pow(Hr_,3) - b_*Math.pow(h_,3)) / 12;
+    const Iy = (Hr_*Math.pow(Br_,3) - h_*Math.pow(b_,3)) / 12;
+    // 弯曲截面系数
+    const Wz = Iz / (Hr_/2);   // 抵抗垂直弯曲
+    const Wy = Iy / (Br_/2);   // 抵抗水平弯曲
+    // 扭转截面系数（Bredt薄壁闭合截面）
+    const Am = (Br_+b_)/2 * (Hr_+h_)/2;
+    const t_min = Math.min(th_, tb_);
+    const Wp = 2 * Am * t_min;
+    // 截面面积
+    const A_ = Br_*Hr_ - b_*h_;
+
+    const cards = [
+      { label: '外宽 B_r × 外高 H_r', value: Br_+'×'+Hr_, unit: 'mm' },
+      { label: '内宽 b × 内高 h', value: fmtN(b_,1)+'×'+fmtN(h_,1), unit: 'mm', note: 'b=B-2t_b, h=H-2t_h' },
+      { label: '壁厚 t_h(上下)/t_b(左右)', value: th_+'/'+tb_, unit: 'mm' },
+      { label: '截面面积 A', value: fmtN(A_,1), unit: 'mm²' },
+      { label: '垂直弯曲惯性矩 Iz', value: fmtN(Iz,0), unit: 'mm⁴', note: '(BH³−bh³)/12' },
+      { label: '水平弯曲惯性矩 Iy', value: fmtN(Iy,0), unit: 'mm⁴', note: '(HB³−hb³)/12' },
+      { label: '垂直弯曲截面系数 Wz', value: fmtN(Wz,1), unit: 'mm³', note: 'Iz/(H/2)，抵抗垂直载荷' },
+      { label: '水平弯曲截面系数 Wy', value: fmtN(Wy,1), unit: 'mm³', note: 'Iy/(B/2)，抵抗侧向载荷' },
+      { label: 'Wz/Wy 比值', value: fmtN(Wz/Wy,3), unit: '', note: '≠1 说明两方向抗弯能力不同' },
+      { label: '中线围合面积 Am', value: fmtN(Am,1), unit: 'mm²', note: 'Bredt公式参数' },
+      { label: '最小壁厚 t_min', value: fmtN(t_min,1), unit: 'mm', note: '扭转最薄弱处' },
+      { label: '扭转截面系数 Wp（Bredt）', value: fmtN(Wp,1), unit: 'mm³', note: '2×Am×t_min' },
+    ];
+    return { Wz, Wy, Wp, Iz, Iy, cards, shapeName: '矩形空心截面（'+Br_+'×'+Hr_+'×t'+th_+'/'+tb_+'）' };
+  }
+  else { // circular
+    const D1_ = v('D1_housing'), d1_ = v('d1_housing');
+    if(d1_ >= D1_) { alert('内径d₁必须小于外径D₁，请检查输入！'); return null; }
+    const D4 = Math.pow(D1_,4), d4 = Math.pow(d1_,4);
+    const Iz = Math.PI*(D4-d4)/64;
+    const Wz = Math.PI*(D4-d4)/(32*D1_);
+    const Wp = Math.PI*(D4-d4)/(16*D1_);
+    const cards = [
+      { label: '式5-57：弯曲截面系数 Wz=Wy', value: fmtN(Wz,1), unit: 'mm³', note: 'π(D₁⁴−d₁⁴)/(32D₁)，轴对称，各方向相同' },
+      { label: '式5-58：扭转截面系数 Wp', value: fmtN(Wp,1), unit: 'mm³', note: 'π(D₁⁴−d₁⁴)/(16D₁)' },
+      { label: 'Wp/Wz 比值', value: fmtN(Wp/Wz,2), unit: '（应=2）', note: '验证截面系数计算' },
+    ];
+    return { Wz, Wy: Wz, Wp, Iz, Iy: Iz, cards, shapeName: '圆环截面（D₁='+D1_+'，d₁='+d1_+'）' };
+  }
+}
+
 function calcHousing() {
-  const D1_  = v('D1_housing');   // mm
-  const d1_  = v('d1_housing');   // mm
-  const c_   = v('c_spring');     // mm
-  const sigA = v('sigmaAllow_w'); // MPa
-  const tauA = v('tauAllow_w');   // MPa
-  const G2_  = v('G2_housing');   // N
+  const sec = calcSectionProps();
+  if(!sec) return;
+
+  // Wv=垂直抗弯截面系数(Wz), Wh=水平抗弯截面系数(Wy), Wт=抗扭截面系数(Wp)
+  const Wv  = sec.Wz;   // 垂直平面抗弯截面系数
+  const Wh  = sec.Wy;   // 水平平面抗弯截面系数
+  const Wt  = sec.Wp;   // 抗扭截面系数
+  const b_   = v('c_spring');     // 板簧座中心到轮毂中心距 b（mm）
+  const sigA = v('sigmaAllow_w');
+  const tauA = v('tauAllow_w');
+  const G2_  = v('G2_housing');
   const rr_  = v('rr_housing');   // mm
   const phi_ = v('phi_housing');
   const m2p_ = v('m2p_housing');
   const k_   = v('k_dyn_h');
-  const hg_  = v('hg_housing');   // mm
-  const B2_  = v('B2_housing');   // mm
+  const hg_  = v('hg_housing');
+  const B2_  = v('B2_housing');
   const phi1_= v('phi1_housing');
+  const isRect = (document.getElementById('sectionShape').value === 'rect');
 
-  if(d1_ >= D1_) {
-    alert('内径d₁必须小于外径D₁，请检查输入！'); return;
-  }
+  // ── 显示截面参数 ──
+  document.getElementById('housingSectionResults').innerHTML = mkCards(sec.cards);
 
-  // 式5-57/58: 截面系数
-  const D4 = Math.pow(D1_,4), d4 = Math.pow(d1_,4);
-  const Wz = Math.PI*(D4-d4)/(32*D1_);  // mm³
-  const Wp = Math.PI*(D4-d4)/(16*D1_);  // mm³
+  // ════════════════════════════════════════════════════════
+  // 工况一（式5-56）：牵引力或制动力最大时
+  //   σ = Mv/Wv + Mh/Wh
+  //   τ = Tт/Wт
+  //   σn = √(σ² + 4τ²)
+  // ════════════════════════════════════════════════════════
+  const Fz2_1 = m2p_ * G2_ / 2;        // 垂直反力 (N)
+  const Fx2_1 = Fz2_1 * phi_;           // 牵引/制动力 (N)
+  const Mv1   = Fz2_1 * b_;             // 垂直弯矩 (N·mm)
+  const Mh1   = Fx2_1 * b_;             // 水平弯矩 (N·mm)
+  const Tt1   = Fx2_1 * rr_;            // 扭矩 (N·mm)
+  const sigV1 = Mv1 / Wv;               // 垂直弯曲应力 (MPa)
+  const sigH1 = Mh1 / Wh;               // 水平弯曲应力 (MPa)
+  const sig1  = sigV1 + sigH1;           // 式5-56：σ = Mv/Wv + Mh/Wh
+  const tau1  = Tt1 / Wt;               // τ = Tт/Wт
+  const sigN1 = Math.sqrt(sig1*sig1 + 4*tau1*tau1); // 合成应力
 
-  document.getElementById('housingSectionResults').innerHTML = mkCards([
-    { label: '式5-57：弯曲截面系数 Wz', value: fmtN(Wz,1), unit: 'mm³', note: 'π(D₁⁴−d₁⁴)/(32D₁)' },
-    { label: '式5-58：扭转截面系数 Wp', value: fmtN(Wp,1), unit: 'mm³', note: 'π(D₁⁴−d₁⁴)/(16D₁)' },
-    { label: 'Wp/Wz 比值', value: fmtN(Wp/Wz,2), unit: '（应=2）', note: '验证截面系数计算' },
-  ]);
+  // ════════════════════════════════════════════════════════
+  // 工况二（式5-57）：侧向力最大时
+  //   σ₁ = Fz₂ₒ·(b + φ₁·rr) / Wv  （外侧，应力较大）
+  //   σ₂ = Fz₂ᵢ·(b − φ₁·rr) / Wv  （内侧，应力较小）
+  // ════════════════════════════════════════════════════════
+  const Fz2o  = G2_ * (0.5 + hg_*phi1_/B2_);  // 外侧车轮垂直反力
+  const Fz2i  = G2_ - Fz2o;                     // 内侧车轮垂直反力
+  const arm_o = b_ + phi1_ * rr_;                // 外侧等效力臂 (mm)
+  const arm_i = b_ - phi1_ * rr_;                // 内侧等效力臂 (mm)
+  const sig2o = Fz2o * arm_o / Wv;               // 式5-57 外侧弯曲应力
+  const sig2i = Fz2i * Math.abs(arm_i) / Wv;     // 式5-57 内侧弯曲应力
 
-  // ── 工况一（式5-56：纵向力最大）──
-  const Fz2_1 = m2p_ * G2_ / 2;        // N
-  const Mw1   = Fz2_1 * c_;             // N·mm
-  const Tw1   = Fz2_1 * phi_ * rr_;     // N·mm（驱动反力矩）
-  const sigW1 = Mw1 / Wz;               // MPa
-  const tauW1 = Tw1 / Wp;               // MPa
-  const sigN1 = Math.sqrt(sigW1*sigW1 + 4*tauW1*tauW1); // MPa
+  // ════════════════════════════════════════════════════════
+  // 工况三（式5-58）：汽车通过不平路面
+  //   σ = k·G₂·b / (2·Wv)
+  // ════════════════════════════════════════════════════════
+  const sig3  = k_ * G2_ * b_ / (2 * Wv);
 
-  // ── 工况二（侧向力最大）──
-  const Fz2o  = G2_ * (0.5 + hg_*phi1_/B2_);
-  const Fz2i  = G2_ - Fz2o;
-  const Mwo   = Fz2o * c_;
-  const Mwi   = Fz2i * c_;
-  const sigWo = Mwo / Wz;  // 外轮桥壳弯曲应力
-  const sigWi = Mwi / Wz;  // 内轮桥壳弯曲应力
+  const sigMax = Math.max(sigN1, sig2o, sig2i, sig3);
+  const tauMax = tau1;
+  state.housing_sigMax = sigMax;
+  state.housing_tauMax = tauMax;
+  state.housing_shape  = sec.shapeName;
 
-  // ── 工况三（垂直力最大）──
-  const Fz2_3 = k_ * G2_ / 2;
-  const Mw3   = Fz2_3 * c_;
-  const sigW3 = Mw3 / Wz;
+  // ════════════════════════════════════════════════════════
+  // 渲染结果
+  // ════════════════════════════════════════════════════════
 
-  const sigMax = Math.max(sigN1, sigWo, sigWi, sigW3);
-  const tauMax = tauW1;
-  state.housing_sigMax = sigMax; state.housing_tauMax = tauMax;
+  // ── 工况一详细过程框 ──
+  const case1Detail =
+    '<div style="margin:12px 0 8px;padding:10px 14px;background:#fff8e1;border-left:4px solid #e67e22;border-radius:0 6px 6px 0;font-size:12px;color:#7a5200">' +
+    '<strong>📐 式5-56 工况一详细计算</strong><br>' +
+    '<span style="font-family:monospace;line-height:2.2">' +
+    'Fz2 = m₂ʹG₂/2 = '+fmtN(m2p_,1)+'×'+fmtN(G2_,0)+'/2 = <b>'+fmtN(Fz2_1,0)+' N</b><br>' +
+    'Fx2 = Fz2·φ = '+fmtN(Fz2_1,0)+'×'+phi_+' = <b>'+fmtN(Fx2_1,0)+' N</b><br>' +
+    'Mv = Fz2·b = '+fmtN(Fz2_1,0)+'×'+b_+' = <b>'+fmtN(Mv1,0)+' N·mm</b>（垂直弯矩）<br>' +
+    'Mh = Fx2·b = '+fmtN(Fx2_1,0)+'×'+b_+' = <b>'+fmtN(Mh1,0)+' N·mm</b>（水平弯矩）<br>' +
+    'Tт = Fx2·rr = '+fmtN(Fx2_1,0)+'×'+fmtN(rr_,1)+' = <b>'+fmtN(Tt1,0)+' N·mm</b>（扭矩）<br>' +
+    'σ = Mv/Wv + Mh/Wh = '+fmtN(Mv1,0)+'/'+fmtN(Wv,1)+' + '+fmtN(Mh1,0)+'/'+fmtN(Wh,1)+
+    ' = '+fmtN(sigV1,1)+' + '+fmtN(sigH1,1)+' = <b>'+fmtN(sig1,1)+' MPa</b>' +
+    (isRect ? '　（<em>Wv≠Wh，分别除以各方向截面系数</em>）' : '　（<em>圆截面 Wv=Wh</em>）') + '<br>' +
+    'τ = Tт/Wт = '+fmtN(Tt1,0)+'/'+fmtN(Wt,1)+' = <b>'+fmtN(tau1,1)+' MPa</b><br>' +
+    'σn = √(σ²+4τ²) = √('+fmtN(sig1,1)+'²+4×'+fmtN(tau1,1)+'²) = <b>'+fmtN(sigN1,1)+' MPa</b>' +
+    '</span></div>';
+
+  // ── 工况二详细过程框 ──
+  const case2Detail =
+    '<div style="margin:12px 0 8px;padding:10px 14px;background:#e0f0ff;border-left:4px solid #2d6ec0;border-radius:0 6px 6px 0;font-size:12px;color:#0a3060">' +
+    '<strong>📐 式5-57 工况二详细计算</strong><br>' +
+    '<span style="font-family:monospace;line-height:2.2">' +
+    'Fz₂ₒ = G₂(0.5+hg·φ₁/B₂) = '+fmtN(G2_,0)+'×(0.5+'+fmtN(hg_,0)+'×'+phi1_+'/'+fmtN(B2_,0)+') = <b>'+fmtN(Fz2o,0)+' N</b><br>' +
+    'Fz₂ᵢ = G₂−Fz₂ₒ = '+fmtN(G2_,0)+'−'+fmtN(Fz2o,0)+' = <b>'+fmtN(Fz2i,0)+' N</b><br>' +
+    '外侧等效力臂 (b+φ₁·rr) = '+b_+'+'+phi1_+'×'+fmtN(rr_,1)+' = <b>'+fmtN(arm_o,1)+' mm</b><br>' +
+    '内侧等效力臂 (b−φ₁·rr) = '+b_+'−'+phi1_+'×'+fmtN(rr_,1)+' = <b>'+fmtN(arm_i,1)+' mm</b>' +
+    (arm_i < 0 ? '　⚠️ <em>力臂为负，表示弯矩反向</em>' : '') + '<br>' +
+    'σ₁ = Fz₂ₒ·(b+φ₁·rr)/Wv = '+fmtN(Fz2o,0)+'×'+fmtN(arm_o,1)+'/'+fmtN(Wv,1)+' = <b>'+fmtN(sig2o,1)+' MPa</b>（外侧，较大）<br>' +
+    'σ₂ = Fz₂ᵢ·(b−φ₁·rr)/Wv = '+fmtN(Fz2i,0)+'×'+fmtN(Math.abs(arm_i),1)+'/'+fmtN(Wv,1)+' = <b>'+fmtN(sig2i,1)+' MPa</b>（内侧，较小）' +
+    '</span></div>';
+
+  // ── 工况三详细过程框 ──
+  const case3Detail =
+    '<div style="margin:12px 0 8px;padding:10px 14px;background:#e8f5e9;border-left:4px solid #1a7c3a;border-radius:0 6px 6px 0;font-size:12px;color:#0a4820">' +
+    '<strong>📐 式5-58 工况三详细计算</strong><br>' +
+    '<span style="font-family:monospace;line-height:2.2">' +
+    'σ = k·G₂·b/(2·Wv) = '+k_+'×'+fmtN(G2_,0)+'×'+b_+'/(2×'+fmtN(Wv,1)+') = <b>'+fmtN(sig3,1)+' MPa</b>' +
+    '</span></div>';
+
+  // ── 结果汇总表 ──
+  const tableRows = [
+    { 工况:'工况一（式5-56）牵引/制动力最大', '垂直弯曲σv(MPa)':fmtN(sigV1,1), '水平弯曲σh(MPa)':fmtN(sigH1,1), '弯曲σ=σv+σh(MPa)':fmtN(sig1,1), '扭切τ(MPa)':fmtN(tau1,1), '合成σn=√(σ²+4τ²)(MPa)':fmtN(sigN1,1), 校核:(sigN1<=sigA&&tau1<=tauA)?'✓合格':'✗超限' },
+    { 工况:'工况二（式5-57）外侧板簧座', '垂直弯曲σv(MPa)':'—', '水平弯曲σh(MPa)':'—', '弯曲σ=σv+σh(MPa)':fmtN(sig2o,1), '扭切τ(MPa)':'—', '合成σn=√(σ²+4τ²)(MPa)':fmtN(sig2o,1), 校核:sig2o<=sigA?'✓合格':'✗超限' },
+    { 工况:'工况二（式5-57）内侧板簧座', '垂直弯曲σv(MPa)':'—', '水平弯曲σh(MPa)':'—', '弯曲σ=σv+σh(MPa)':fmtN(sig2i,1), '扭切τ(MPa)':'—', '合成σn=√(σ²+4τ²)(MPa)':fmtN(sig2i,1), 校核:sig2i<=sigA?'✓合格':'✗超限' },
+    { 工况:'工况三（式5-58）不平路面冲击', '垂直弯曲σv(MPa)':fmtN(sig3,1), '水平弯曲σh(MPa)':'—', '弯曲σ=σv+σh(MPa)':fmtN(sig3,1), '扭切τ(MPa)':'—', '合成σn=√(σ²+4τ²)(MPa)':fmtN(sig3,1), 校核:sig3<=sigA?'✓合格':'✗超限' },
+  ];
 
   document.getElementById('housingStrengthResults').innerHTML =
-    mkTable([
-      { 工况: '工况一（纵向力最大）', '载荷 Fz2 (N)': fmtN(Fz2_1,0), '弯矩 Mw (N·mm)': fmtN(Mw1,0), '扭矩 Tw (N·mm)': fmtN(Tw1,0), '弯曲应力σ (MPa)': fmtN(sigW1,1), '扭切应力τ (MPa)': fmtN(tauW1,1), '合成应力σn (MPa)': fmtN(sigN1,1), 校核: (sigN1<=sigA&&tauW1<=tauA)?'✓合格':'✗超限' },
-      { 工况: '工况二（外轮，侧向力最大）', '载荷 Fz2 (N)': fmtN(Fz2o,0), '弯矩 Mw (N·mm)': fmtN(Mwo,0), '扭矩 Tw (N·mm)': '—', '弯曲应力σ (MPa)': fmtN(sigWo,1), '扭切应力τ (MPa)': '—', '合成应力σn (MPa)': fmtN(sigWo,1), 校核: sigWo<=sigA?'✓合格':'✗超限' },
-      { 工况: '工况二（内轮，侧向力最大）', '载荷 Fz2 (N)': fmtN(Fz2i,0), '弯矩 Mw (N·mm)': fmtN(Mwi,0), '扭矩 Tw (N·mm)': '—', '弯曲应力σ (MPa)': fmtN(sigWi,1), '扭切应力τ (MPa)': '—', '合成应力σn (MPa)': fmtN(sigWi,1), 校核: sigWi<=sigA?'✓合格':'✗超限' },
-      { 工况: '工况三（垂直力最大，冲击）', '载荷 Fz2 (N)': fmtN(Fz2_3,0), '弯矩 Mw (N·mm)': fmtN(Mw3,0), '扭矩 Tw (N·mm)': '—', '弯曲应力σ (MPa)': fmtN(sigW3,1), '扭切应力τ (MPa)': '—', '合成应力σn (MPa)': fmtN(sigW3,1), 校核: sigW3<=sigA?'✓合格':'✗超限' },
-    ]) +
+    mkTable(tableRows) +
+    case1Detail + case2Detail + case3Detail +
     '<div style="margin-top:10px">' +
     mkCards([
-      { label: '最大弯曲/合成应力 σmax', value: fmtN(sigMax,1), unit: 'MPa', ok: sigMax<=sigA, note: '许用[σ]_w='+sigA+' MPa' },
-      { label: '最大扭转切应力 τmax（工况一）', value: fmtN(tauMax,1), unit: 'MPa', ok: tauMax<=tauA, note: '许用[τ]_w='+tauA+' MPa' },
-      { label: '弯曲校核', value: sigMax<=sigA?'✓ 满足要求':'✗ 超过许用值，需增大D₁或增加壁厚', unit: '', ok: sigMax<=sigA },
+      { label: '三工况最大应力 σmax', value: fmtN(sigMax,1), unit: 'MPa', ok: sigMax<=sigA, note: '许用[σ]='+sigA+' MPa（300~500 MPa）' },
+      { label: '最大扭转切应力 τmax（工况一）', value: fmtN(tauMax,1), unit: 'MPa', ok: tauMax<=tauA, note: '许用[τ]='+tauA+' MPa（150~400 MPa）' },
+      { label: '弯曲校核', value: sigMax<=sigA?'✓ 满足要求':'✗ 超过许用值，需调整截面尺寸', unit: '', ok: sigMax<=sigA },
       { label: '扭转校核', value: tauMax<=tauA?'✓ 满足要求':'✗ 超过许用值', unit: '', ok: tauMax<=tauA },
     ]) + '</div>';
 }
@@ -2906,9 +3092,10 @@ function buildSummary() {
     const hTauA = v('tauAllow_w') || 400;
     housingTable.innerHTML = mkTable([
       { 参数: '桥壳类型', 数值: (document.getElementById('housingType') ? document.getElementById('housingType').options[document.getElementById('housingType').selectedIndex].text : '—'), 备注: '' },
-      { 参数: '轴管外径 D₁', 数值: (v('D1_housing')||'—') + ' mm', 备注: '' },
-      { 参数: '轴管内径 d₁', 数值: (v('d1_housing')||'—') + ' mm', 备注: '' },
-      { 参数: '弹簧座至车轮距 c', 数值: (v('c_spring')||'—') + ' mm', 备注: '' },
+      { 参数: '危险截面形状', 数值: (state.housing_shape || (document.getElementById('sectionShape') ? document.getElementById('sectionShape').options[document.getElementById('sectionShape').selectedIndex].text : '—')), 备注: '' },
+      { 参数: '轴管外径 D₁ / 外宽B×外高H', 数值: document.getElementById('sectionShape').value==='rect' ? v('Br_housing')+'×'+v('Hr_housing')+' mm' : (v('D1_housing')||'—') + ' mm', 备注: '' },
+      { 参数: '轴管内径 d₁ / 壁厚', 数值: document.getElementById('sectionShape').value==='rect' ? 't_h='+v('th_housing')+', t_b='+v('tb_housing')+' mm' : (v('d1_housing')||'—') + ' mm', 备注: '' },
+      { 参数: '板簧座至轮毂中心距 b', 数值: (v('c_spring')||'—') + ' mm', 备注: '' },
       { 参数: '许用弯曲应力 [σ]', 数值: hSigA + ' MPa', 备注: '' },
       { 参数: '许用扭转切应力 [τ]', 数值: hTauA + ' MPa', 备注: '' },
       { 参数: '最大桥壳弯/合成应力', 数值: (state.housing_sigMax ? fmtN(state.housing_sigMax,1) : '未计算') + ' MPa', 备注: state.housing_sigMax ? (state.housing_sigMax<=hSigA?'✓ ≤[σ]':'✗ 超限') : '' },
