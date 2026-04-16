@@ -363,7 +363,7 @@ user-select: none
 <div class="app-header">
   <div>
     <h1>🔧 汽车驱动桥设计计算工具</h1>
-    <div class="sub">基于《汽车设计》第5版（闵海涛、王建华）· 主减速器 · 差速器 · 半轴设计</div>
+    <div class="sub">基于《汽车设计》第6版（闵海涛、王建华）· 主减速器 · 差速器 · 半轴设计</div>
     <div class="hdr-stu-info">
       <span class="hdr-stu-chip">🎓 学号：<span id="dispStuId">—</span></span>
       <span class="hdr-stu-chip">👤 姓名：<span id="dispStuName">—</span></span>
@@ -742,8 +742,8 @@ user-select: none
 
     <div class="section-title">算法二折算系数（可调）</div>
     <div class="info-box">
-      算法二按发动机起动转矩折算系数直接计算单位齿长圆周力：F = 2×(T<sub>emax</sub>×折算系数) / D<sub>m2</sub>。
-      教材默认：一档取 <b>0.04</b>，直接档（次高档）取 <b>0.18</b>，可根据具体车型或设计规范修改。
+      算法二按发动机起动转矩折算系数直接计算单位齿长圆周力：p = F / b₂（ N/mm，b₂为从动齿轮齿面宽，）。
+      按照计算结果取值：一档取 <b>0.04</b>，直接档（次高档）取 <b>0.18</b>，可根据具体车型或设计规范修改。
     </div>
     <div class="grid2">
       <div class="field">
@@ -2047,13 +2047,14 @@ function calcStrength() {
   const k_s      = v('k_clutch')|| 1.0;
   const Dm2_s    = state.Dm2;   // 从动轮中点分度圆直径 (mm)
 
-  // 从动齿轮转矩（1档 / 最高档）
-  const T_1st = kd_s * k_s * Temax_s * ig1_s * if_s * i0_s * eta_s / n_s;
-  const T_top = kd_s * k_s * Temax_s * igh_s * if_s * i0_s * eta_s / n_s;
+  // 主动齿轮转矩（1档 / 最高档） - 去掉i₀得到主动轮转矩
+  const T_1st = kd_s * k_s * Temax_s * ig1_s * if_s * eta_s / n_s;
+  const T_top = kd_s * k_s * Temax_s * igh_s * if_s * eta_s / n_s;
 
-  // 圆周力 F = 2T / Dm2（式5-17，T单位N·m，Dm2换算为m）
-  const Ft_1st  = 2 * T_1st / (Dm2_s / 1000);
-  const Ft_top  = 2 * T_top / (Dm2_s / 1000);
+  // 圆周力 F = 2T / Dm1（式5-17，T单位N·m，Dm1换算为m）- 使用主动轮直径
+  const Dm1_s    = state.Dm1;   // 主动轮中点分度圆直径 (mm)
+  const Ft_1st  = 2 * T_1st / (Dm1_s / 1000);
+  const Ft_top  = 2 * T_top / (Dm1_s / 1000);
 
   // 驱动轮打滑工况：打滑转矩 Tcs（式5-6），圆周力 Fslip = 2Tcs/Dm2
   const G2_s   = (v('ma') || state.ma || 2195) * 9.81 * (v('axleRatio') || 0.55);
@@ -2063,7 +2064,7 @@ function calcStrength() {
   const im_s   = v('im_diff') || 1.0;
   const etam_s = v('etam') || 1.0;
   const T_slip  = (G2_s * m2p_s * phi_s * rr_s) / (im_s * etam_s);   // N·m，式5-6
-  const Ft_slip = 2 * T_slip / (Dm2_s / 1000);                         // N
+  const Ft_slip = 2 * T_slip / (Dm2_s / 1000);                         // N（打滑工况使用从动轮直径D2）
 
   // 单位齿长圆周力 p = F / b₂（从动齿轮齿面宽）—— 算法一
   const p_1st   = Ft_1st  / state.b2;
@@ -2076,8 +2077,8 @@ function calcStrength() {
   const ktop_coef = parseFloat(document.getElementById('str_ktop').value) || 0.18;
   const T2_1st  = Temax_s * k1st_coef;                  // N·m（一档折算转矩）
   const T2_top  = Temax_s * ktop_coef;                  // N·m（直接档折算转矩）
-  const Ft2_1st  = 2 * T2_1st  / (Dm2_s / 1000);       // N
-  const Ft2_top  = 2 * T2_top  / (Dm2_s / 1000);       // N
+  const Ft2_1st  = 2 * T2_1st  / (Dm1_s / 1000);       // N（一档使用主动轮直径D1）
+  const Ft2_top  = 2 * T2_top  / (Dm2_s / 1000);       // N（最高档使用从动轮直径D2）
   const Ft2_slip = Ft_slip;                              // 打滑工况与算法一相同
   const p2_1st   = Ft2_1st  / state.b2;                 // N/mm
   const p2_top   = Ft2_top  / state.b2;
@@ -2149,13 +2150,13 @@ function calcStrength() {
     '<div class="section-title">单位齿长圆周力校核</div>' +
     '<div class="formula-box" style="font-size:12px;margin-bottom:8px">' +
       '<strong>【算法一：按整车传动系参数折算】</strong><br>' +
-      '一档：　　　　　F₁ = 2×(Kd×k×Temax×ig1×if×i₀×η/n) / Dm₂<br>' +
-      '直接档：　　　Fh = 2×(Kd×k×Temax×igh×if×i₀×η/n) / Dm₂<br>' +
-      '打滑：　　　　Fs = 2×(G₂×m₂′×φ×rr/(im×ηm)) / Dm₂<br>' +
+      '一档主动轮转矩：　　T₁ = Kd×k×Temax×ig1×if×η/n　→　一档圆周力：F₁ = 2×T₁ / D₁<br>' +
+      '直接档（最高档）主动轮转矩：Th = Kd×k×Temax×igh×if×η/n　→　直接档圆周力：Fh = 2×Th / D₁<br>' +
+      '打滑转矩：　　　　Tcs = G₂×m₂′×φ×rr/(im×ηm)　→　打滑圆周力：Fs = 2×Tcs / D₂<br>' +
       '<strong>【算法二：按发动机起动转矩折算系数直接折算】</strong><br>' +
-      `一档：　　　　　F₁ = 2×(Temax×${fmtN(k1st_coef,3)}) / Dm₂<br>` +
-      `最高档（次高档）直接档：Fh = 2×(Temax×${fmtN(ktop_coef,3)}) / Dm₂<br>` +
-      '打滑：　　　　Fs = 2×(G₂×m₂′×φ×rr/(im×ηm)) / Dm₂　（同算法一）<br>' +
+      `一档圆周力：　　　　　F₁ = 2×(Temax×${fmtN(k1st_coef,3)}) / D1<br>` +
+      `最高档（次高档）直接档圆周力：Fh = 2×(Temax×${fmtN(ktop_coef,3)}) / D2<br>` +
+      '打滑圆周力：　　　　Fs = 2×(G₂×m₂′×φ×rr/(im×ηm)) / D₂　（同算法一）<br>' +
       '单位齿长圆周力：p = F / b₂（从动齿轮齿面宽，N/mm）' +
     '</div>' +
     `<div class="section-title" style="margin-top:4px">许用单位齿长圆周力 [p] 参考表（教材表5-4）</div>
@@ -2190,9 +2191,9 @@ function calcStrength() {
     <div class="tip-box" style="margin-bottom:10px">当前车型：<strong>${vtype==='truck'?'商用车（货车）':vtype==='suv'?'SUV（按乘用车取值）':'乘用车'}</strong>　→　许用值：一档 <strong>${p_allow_1st}</strong> N/mm · 直接档 <strong>${p_allow_top}</strong> N/mm · 打滑 <strong>${p_allow_slip}</strong> N/mm（高亮行）</div>` +
     mkCards([
       { label: '一档圆周力 F₁', value: fmtN(Ft_1st), unit: 'N',
-        note: `T₁=Kd×k×Temax×ig1×if×i₀×η/n=${kd_s}×${k_s}×${fmtN(Temax_s)}×${fmtN(ig1_s,3)}×${fmtN(if_s,2)}×${fmtN(i0_s,2)}×${fmtN(eta_s,2)}/${n_s}=${fmtN(T_1st,1)}N·m；F₁=2×${fmtN(T_1st,1)}/(${fmtN(Dm2_s,1)}/1000)` },
+        note: `T₁=Kd×k×Temax×ig1×if×η/n=${kd_s}×${k_s}×${fmtN(Temax_s)}×${fmtN(ig1_s,3)}×${fmtN(if_s,2)}×${fmtN(eta_s,2)}/${n_s}=${fmtN(T_1st,1)}N·m；F₁=2×${fmtN(T_1st,1)}/(${fmtN(Dm1_s,1)}/1000)` },
       { label: '最高档（直接档）圆周力 Fh', value: fmtN(Ft_top), unit: 'N',
-        note: `Th=Kd×k×Temax×igh×if×i₀×η/n=${kd_s}×${k_s}×${fmtN(Temax_s)}×${fmtN(igh_s,3)}×${fmtN(if_s,2)}×${fmtN(i0_s,2)}×${fmtN(eta_s,2)}/${n_s}=${fmtN(T_top,1)}N·m；Fh=2×${fmtN(T_top,1)}/(${fmtN(Dm2_s,1)}/1000)` },
+        note: `Th=Kd×k×Temax×igh×if×η/n=${kd_s}×${k_s}×${fmtN(Temax_s)}×${fmtN(igh_s,3)}×${fmtN(if_s,2)}×${fmtN(eta_s,2)}/${n_s}=${fmtN(T_top,1)}N·m；Fh=2×${fmtN(T_top,1)}/(${fmtN(Dm1_s,1)}/1000)` },
       { label: '打滑工况圆周力 Fs', value: fmtN(Ft_slip), unit: 'N',
         note: `Tcs=G₂×m₂ʹ×φ×rr/(im×ηm)=${fmtN(G2_s,1)}×${fmtN(m2p_s,2)}×${fmtN(phi_s,2)}×${fmtN(rr_s,3)}/(${fmtN(im_s,2)}×${fmtN(etam_s,2)})=${fmtN(T_slip,1)}N·m；Fs=2×${fmtN(T_slip,1)}/(${fmtN(Dm2_s,1)}/1000)` },
       { label: '一档单位齿长圆周力 p₁', value: fmtN(p_1st), unit: 'N/mm',
@@ -2207,7 +2208,7 @@ function calcStrength() {
     `<div class="tip-box" style="margin-bottom:8px;font-size:12px">折算系数法：一档取 <b>${fmtN(k1st_coef,3)}</b>，直接档（次高档）取 <b>${fmtN(ktop_coef,3)}</b>，打滑工况同算法一；许用值仍按上表。</div>` +
     mkCards([
       { label: '算法二 一档圆周力 F₁′', value: fmtN(Ft2_1st), unit: 'N',
-        note: `T₁′=Temax×${fmtN(k1st_coef,3)}=${fmtN(Temax_s)}×${fmtN(k1st_coef,3)}=${fmtN(T2_1st,1)}N·m；F₁′=2×${fmtN(T2_1st,1)}/(${fmtN(Dm2_s,1)}/1000)` },
+        note: `T₁′=Temax×${fmtN(k1st_coef,3)}=${fmtN(Temax_s)}×${fmtN(k1st_coef,3)}=${fmtN(T2_1st,1)}N·m；F₁′=2×${fmtN(T2_1st,1)}/(${fmtN(Dm1_s,1)}/1000)` },
       { label: '算法二 直接档圆周力 Fh′', value: fmtN(Ft2_top), unit: 'N',
         note: `Th′=Temax×${fmtN(ktop_coef,3)}=${fmtN(Temax_s)}×${fmtN(ktop_coef,3)}=${fmtN(T2_top,1)}N·m；Fh′=2×${fmtN(T2_top,1)}/(${fmtN(Dm2_s,1)}/1000)` },
       { label: '算法二 打滑工况圆周力 Fs′', value: fmtN(Ft2_slip), unit: 'N',
